@@ -26,22 +26,14 @@ async function getUserChannelMessages(user, channel) {
         isLastChunk = false;
     const fetchLimit = 100;
 
-    console.log("1: " + Array.isArray(userMessages));
     while (!isLastChunk) {
 
-        console.log(Array.isArray(userMessages));
-
         let queryResult = [];
-        console.log("before that");
-
-        const promised = channel.fetchMessages(
+        const promised = await channel.fetchMessages(
             { limit: fetchLimit, before: pivotId });
 
-        console.log("promised: " + promised.resolve([]));
         promised.forEach(msg => queryResult.push(msg));
-
         const fetchedNum = queryResult.length;
-        console.log("fetchedNum: " + fetchedNum);
         if (fetchedNum != fetchLimit) {
             if (fetchedNum == 0) { 
                 break; 
@@ -54,12 +46,6 @@ async function getUserChannelMessages(user, channel) {
         userMessages = userMessages.concat(
             queryResult.filter(msg => msg.author === user));
     }
-
-    // console.log('userMessages.length = ' + userMessages.length);
-    // console.log('the oldest message: ' + 
-    //     userMessages[userMessages.length-1].createdAt);
-
-    console.log("2: " + Array.isArray(userMessages));
 
     return userMessages;
 }
@@ -193,9 +179,12 @@ client.on('message', message => {
                 const users = retrieveMentionedUsers(message);
                 users.forEach(u => {
 
-                    const messages = getUserChannelMessages(u, stream);
-                    console.log("3: " + Array.isArray(messages));
-                    console.log(collectWords(messages));
+                    let messages;
+                    getUserChannelMessages(u, stream)
+                        .then(result => {
+                            messages = result;                    
+                            console.log(collectWords(messages));
+                        });
                 });
             }
 
