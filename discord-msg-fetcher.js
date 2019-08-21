@@ -74,7 +74,7 @@ function replaceSigns(wordArray) {
     return refined;
 }
 
-function collectWords(messages) {
+function buildDictionary(messages) {
 
     let totalWordNum = 0, 
         dict = new Map();
@@ -93,7 +93,23 @@ function collectWords(messages) {
         });
     });
 
-    return dict.size;
+    return dict;
+}
+
+// returns array consisting of map entries represented by two element arrays
+function getWordsWithPopularity(dict) {
+
+    let dictIter = dict.entries(), 
+        entryArray = [];
+
+    while (true) {
+        const result = dictIter.next();
+        if (result.done) { break; }
+        entryArray.push(result.value);
+    }
+
+    entryArray.sort((a, b) => b[1]-a[1]);
+    return entryArray;
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -178,12 +194,18 @@ client.on('message', message => {
 
                 const users = retrieveMentionedUsers(message);
                 users.forEach(u => {
-
-                    let messages;
                     getUserChannelMessages(u, stream)
                         .then(result => {
-                            messages = result;                    
-                            console.log(collectWords(messages));
+                            const wordsWithStats = getWordsWithPopularity(
+                                buildDictionary(result));
+                            let outputString = '', 
+                                place = 1;
+                            wordsWithStats.slice(0, 10).forEach(elem => {
+                                outputString += `${place}. ${elem[0]}:` + 
+                                    ` ${elem[1]}\n`;
+                                place++;
+                            });
+                            stream.send(outputString);
                         });
                 });
             }
